@@ -1,7 +1,7 @@
 import math
 import sys
 from pathlib import Path
-
+import statistics
 from matplotlib import pyplot
 from matplotlib.patches import Rectangle
 
@@ -63,37 +63,44 @@ def computeRGBToGreyscale(pixel_array_r, pixel_array_g, pixel_array_b, image_wid
             greyscale_pixel_array[i][j] =  round((0.299 * pixel_array_r[i][j]) + (0.587 * pixel_array_g[i][j]) + (0.114 * pixel_array_b[i][j]))
     
     return greyscale_pixel_array
-def contrastStretch(pix_array):
-    copyarray = list(pix_array)
-    mymin = min([min(r) for r in copyarray])
-    mymax = max([max(r) for r in copyarray])
+def contrastStretch(pix_array, image_width, image_height):
+    copyarray = pix_array[:]
+    mymin = min([min(r) for r in copyarray]) #lowest pixel in image 
+    mymax = max([max(r) for r in copyarray]) #highest pixel in image
     print(mymin)
     print(mymax)
-    contrast = 255 / (mymax - mymin)
-    print(contrast)
+    #contrast = 255 / (mymax - mymin)
+    #print(contrast)
     for i in range(len(copyarray)):
         for j in range(len(copyarray[i])):
-            copyarray[i][j] = round(copyarray[i][j] * contrast)
+            copyarray[i][j] = round((copyarray[i][j] - mymin) * (255 / (mymax - mymin))) # the math thingy
             if copyarray[i][j] > 255:
                 copyarray[i][j] = 255
     return copyarray 
 
-def standardDev(pix_array):
-    copyarray = list(pix_array)
-    for i in range(2, len(copyarray) - 2):
-        for j in range(2, len(copyarray[i]) - 2):
-            neighbourhood = []
-            for row in range(i - 2, i + 3):
-                for col in range(j - 2, j + 3):
-                    neighbourhood.append(copyarray[row][col]) 
-            avrg = sum(neighbourhood) / len(neighbourhood)
-            diffs = []
-            for num in neighbourhood:
-                diffs.append((num - avrg) ** 2)
-            standarddev = round(math.sqrt(sum(diffs)) / len(neighbourhood))
-            copyarray[i][j] = standarddev 
+def standardDev(pix_array, image_width, image_height):
+    copyarray = createInitializedGreyscalePixelArray(image_width, image_height)
+    for i in range(2, image_height - 2): #loop through rows without border
+        for j in range(2, image_width - 2): #loop through columns without border
+            neighbourhood = [] # array for the 5x5
+            for row in range(i - 2, i + 3): #range of -2 + 2 around the current center pixel
+                for col in range(j - 2, j + 3): #range of -2 + 2 around the current center pixel
+                    neighbourhood.append(pix_array[row][col]) #add to neighbourhood
+            standev = statistics.pstdev(neighbourhood) #standard deviation
+            #avrg = statistics.mean(neighbourhood) 
+            copyarray[i][j] = standev
+    print(neighbourhood)
     return copyarray
 
+def binaryimage(pix_array, image_width, image_height):
+    copyarray = createInitializedGreyscalePixelArray(image_width, image_height)
+    for i in range(image_height):
+        for j in range(image_width):
+            if pix_array[i][j] > 150:
+                copyarray[i][j] = 255
+            else:
+                copyarray[i][j] = 0
+    return copyarray
 # This is our code skeleton that performs the license plate detection.
 # Feel free to try it on your own images of cars, but keep in mind that with our algorithm developed in this lecture,
 # we won't detect arbitrary or difficult to detect license plates!
@@ -126,24 +133,29 @@ def main():
 
     # setup the plots for intermediate results in a figure
     fig1, axs1 = pyplot.subplots(2, 2)
-    axs1[0, 0].set_title('Input red channel of image')
-    axs1[0, 0].imshow(px_array_r, cmap='gray')
-    axs1[0, 1].set_title('Input green channel of image')
-    axs1[0, 1].imshow(px_array_g, cmap='gray')
-    axs1[1, 0].set_title('Input blue channel of image')
-    axs1[1, 0].imshow(px_array_b, cmap='gray')
+    #axs1[0, 0].set_title('Input red channel of image')
+    #axs1[0, 0].imshow(px_array_r, cmap='gray')
+    #axs1[0, 1].set_title('Input green channel of image')
+    #axs1[0, 1].imshow(px_array_g, cmap='gray')
+    #axs1[1, 0].set_title('Input blue channel of image')
+    #axs1[1, 0].imshow(px_array_b, cmap='gray')
 
 
     # STUDENT IMPLEMENTATION here
 
     px_array = computeRGBToGreyscale(px_array_r, px_array_b, px_array_g, image_width, image_height)
-    contrastarray = contrastStretch(px_array)
-    standarddevarray = contrastStretch(standardDev(px_array))
-    #axs1[1, 0].set_title('Contrast stretch')
-    #axs1[1, 0].imshow(contrastarray, cmap='gray')
-    #axs1[0, 1].set_title('Standard Deviation')
-    #axs1[0, 1].imshow(standarddevarray, cmap='gray')
+    px_arraycopy = px_array[:]
+    contrastarray = contrastStretch(px_arraycopy, image_width, image_height)
+    axs1[1, 0].set_title('Contrast stretch')
+    axs1[1, 0].imshow(contrastarray, cmap='gray')
+    standarddevarray = standardDev(contrastarray, image_width, image_height)
+    standarddevarray = contrastStretch(standarddevarray, image_width, image_height)
+    thresholdarray = binaryimage(standarddevarray, image_width, image_height)
+    axs1[0, 1].set_title('Standard Deviation')
+    axs1[0, 1].imshow(standarddevarray, cmap='gray')
     
+    axs1[0, 0].set_title('Thresholding')
+    axs1[0, 0].imshow(thresholdarray, cmap='gray')
     # compute a dummy bounding box centered in the middle of the input image, and with as size of half of width and height
     center_x = image_width / 2.0
     center_y = image_height / 2.0
