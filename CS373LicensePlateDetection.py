@@ -63,34 +63,36 @@ def computeRGBToGreyscale(pixel_array_r, pixel_array_g, pixel_array_b, image_wid
             greyscale_pixel_array[i][j] =  round((0.299 * pixel_array_r[i][j]) + (0.587 * pixel_array_g[i][j]) + (0.114 * pixel_array_b[i][j]))
     
     return greyscale_pixel_array
-def contrastStretch(px_array):
-    mymin = min([min(r) for r in px_array])
-    mymax = max([max(r) for r in px_array])
+def contrastStretch(pix_array):
+    copyarray = list(pix_array)
+    mymin = min([min(r) for r in copyarray])
+    mymax = max([max(r) for r in copyarray])
     print(mymin)
     print(mymax)
     contrast = 255 / (mymax - mymin)
     print(contrast)
-    for i in range(len(px_array)):
-        for j in range(len(px_array[i])):
-            px_array[i][j] = round(px_array[i][j] * contrast)
-            if px_array[i][j] > 255:
-                px_array[i][j] = 255
-    return px_array 
+    for i in range(len(copyarray)):
+        for j in range(len(copyarray[i])):
+            copyarray[i][j] = round(copyarray[i][j] * contrast)
+            if copyarray[i][j] > 255:
+                copyarray[i][j] = 255
+    return copyarray 
 
 def standardDev(pix_array):
-    for i in range(2, len(pix_array) - 2):
-        for j in range(2, len(pix_array[i]) - 2):
+    copyarray = list(pix_array)
+    for i in range(2, len(copyarray) - 2):
+        for j in range(2, len(copyarray[i]) - 2):
             neighbourhood = []
             for row in range(i - 2, i + 3):
                 for col in range(j - 2, j + 3):
-                    neighbourhood.append(pix_array[row][col]) 
+                    neighbourhood.append(copyarray[row][col]) 
             avrg = sum(neighbourhood) / len(neighbourhood)
             diffs = []
             for num in neighbourhood:
                 diffs.append((num - avrg) ** 2)
             standarddev = round(math.sqrt(sum(diffs)) / len(neighbourhood))
-            pix_array[i][j] = standarddev 
-    return pix_array
+            copyarray[i][j] = standarddev 
+    return copyarray
 
 # This is our code skeleton that performs the license plate detection.
 # Feel free to try it on your own images of cars, but keep in mind that with our algorithm developed in this lecture,
