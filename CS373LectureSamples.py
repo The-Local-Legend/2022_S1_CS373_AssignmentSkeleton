@@ -1,5 +1,5 @@
 from matplotlib import pyplot
-
+import math 
 # import our basic, light-weight png reader library
 import imageIO.png
 
@@ -55,12 +55,13 @@ def computeHistogram(pixel_array, image_width, image_height, nr_bins):
     histogram = [0.0 for i in range(nr_bins)]
 
     # your task to compute the correct histogram!
+    divider = 256 / nr_bins
+    for i in pixel_array:
+        for j in i:
+            histogram[int(j//divider)] += 1
 
     # incorrect histogram
-    histogram[0] = 10
-    histogram[32] = 15
-    histogram[63] = 10
-
+    
     return histogram
 
 

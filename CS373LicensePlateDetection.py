@@ -54,7 +54,43 @@ def createInitializedGreyscalePixelArray(image_width, image_height, initValue = 
     new_array = [[initValue for x in range(image_width)] for y in range(image_height)]
     return new_array
 
+def computeRGBToGreyscale(pixel_array_r, pixel_array_g, pixel_array_b, image_width, image_height):
+    
+    greyscale_pixel_array = createInitializedGreyscalePixelArray(image_width, image_height)
+    
+    for i in range(len(greyscale_pixel_array)):
+        for j in range(len(greyscale_pixel_array[i])):
+            greyscale_pixel_array[i][j] =  round((0.299 * pixel_array_r[i][j]) + (0.587 * pixel_array_g[i][j]) + (0.114 * pixel_array_b[i][j]))
+    
+    return greyscale_pixel_array
+def contrastStretch(px_array):
+    mymin = min([min(r) for r in px_array])
+    mymax = max([max(r) for r in px_array])
+    print(mymin)
+    print(mymax)
+    contrast = 255 / (mymax - mymin)
+    print(contrast)
+    for i in range(len(px_array)):
+        for j in range(len(px_array[i])):
+            px_array[i][j] = round(px_array[i][j] * contrast)
+            if px_array[i][j] > 255:
+                px_array[i][j] = 255
+    return px_array 
 
+def standardDev(pix_array):
+    for i in range(2, len(pix_array) - 2):
+        for j in range(2, len(pix_array[i]) - 2):
+            neighbourhood = []
+            for row in range(i - 2, i + 3):
+                for col in range(j - 2, j + 3):
+                    neighbourhood.append(pix_array[row][col]) 
+            avrg = sum(neighbourhood) / len(neighbourhood)
+            diffs = []
+            for num in neighbourhood:
+                diffs.append((num - avrg) ** 2)
+            standarddev = round(math.sqrt(sum(diffs)) / len(neighbourhood))
+            pix_array[i][j] = standarddev 
+    return pix_array
 
 # This is our code skeleton that performs the license plate detection.
 # Feel free to try it on your own images of cars, but keep in mind that with our algorithm developed in this lecture,
@@ -98,8 +134,14 @@ def main():
 
     # STUDENT IMPLEMENTATION here
 
-    px_array = px_array_r
-
+    px_array = computeRGBToGreyscale(px_array_r, px_array_b, px_array_g, image_width, image_height)
+    contrastarray = contrastStretch(px_array)
+    standarddevarray = contrastStretch(standardDev(px_array))
+    #axs1[1, 0].set_title('Contrast stretch')
+    #axs1[1, 0].imshow(contrastarray, cmap='gray')
+    #axs1[0, 1].set_title('Standard Deviation')
+    #axs1[0, 1].imshow(standarddevarray, cmap='gray')
+    
     # compute a dummy bounding box centered in the middle of the input image, and with as size of half of width and height
     center_x = image_width / 2.0
     center_y = image_height / 2.0
