@@ -228,12 +228,12 @@ def connections(pix_array, image_width, image_height):
             if copyarray[i][j] == region:
                 if j < tl[0]:
                     tl = (j, tl[1])
-                    if i < tl[1]:
-                        tl = (tl[0], i)
+                if i < tl[1]:
+                    tl = (tl[0], i)
                 if j > br[0]:
                     br = (j, br[1])
-                    if i > br[1]:
-                        br = (br[0], i)
+                if i > br[1]:
+                    br = (br[0], i)
     print(tl, br)
     return (tl, br)
 
@@ -302,10 +302,10 @@ def main():
     # compute a dummy bounding box centered in the middle of the input image, and with as size of half of width and height
     center_x = image_width / 2.0
     center_y = image_height / 2.0
-    bbox_min_x = center_x - image_width / 4.0
-    bbox_max_x = center_x + image_width / 4.0
-    bbox_min_y = center_y - image_height / 4.0
-    bbox_max_y = center_y + image_height / 4.0
+    bbox_min_x = tl[0]
+    bbox_max_x = br[0]
+    bbox_min_y = tl[1]
+    bbox_max_y = br[1]
 
 
 
