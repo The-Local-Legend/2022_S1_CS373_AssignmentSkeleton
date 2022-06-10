@@ -111,7 +111,7 @@ def binaryimage(pix_array, image_width, image_height):
     copyarray = createInitializedGreyscalePixelArray(image_width, image_height)
     for i in range(image_height):
         for j in range(image_width):
-            if pix_array[i][j] > 150:
+            if pix_array[i][j] > 160:
                 copyarray[i][j] = 255
             else:
                 copyarray[i][j] = 0
@@ -243,7 +243,7 @@ def main():
     SHOW_DEBUG_FIGURES = True
 
     # this is the default input image filename
-    input_filename = "numberplate6.png"
+    input_filename = "numberplate3.png"
 
     if command_line_arguments != []:
         input_filename = command_line_arguments[0]
