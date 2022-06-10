@@ -102,7 +102,7 @@ def standardDev(pix_array, image_width, image_height):
                 for col in range(j - 2, j + 3): #range of -2 + 2 around the current center pixel
                     neighbourhood.append(pix_array[row][col]) #add to neighbourhood
             standev = statistics.pstdev(neighbourhood) #standard deviation
-            #avrg = statistics.mean(neighbourhood) 
+            
             copyarray[i][j] = standev
     print(neighbourhood)
     return copyarray
@@ -152,7 +152,7 @@ def dilation(pix_array, image_width, image_height):
     return copyarray
 
 def connections(pix_array, image_width, image_height):
-    #debug = open("debug.txt", "w")
+    
     current_label = 1
     copyarray = createInitializedGreyscalePixelArray(image_width, image_height) #Empty array of 0s
     visitedarray = createInitializedGreyscalePixelArray(image_width, image_height)
@@ -161,10 +161,10 @@ def connections(pix_array, image_width, image_height):
             if pix_array[i][j] > 1 and visitedarray[i][j] != True:
                 thequeue = Queue()
                 thequeue.enqueue((i, j))
-                #debug.write(str(thequeue.size()))
+               
                 while not thequeue.isEmpty():
                     primeindexes = thequeue.dequeue()
-                    #debug.writelines(str(primeindexes))
+                  
                     copyarray[primeindexes[0]][primeindexes[1]] = current_label
                     try: #Left pixel
                         if visitedarray[primeindexes[0]][primeindexes[1] - 1] != True and pix_array[primeindexes[0]][primeindexes[1] - 1] > 1:
@@ -199,7 +199,7 @@ def connections(pix_array, image_width, image_height):
                             visitedarray[primeindexes[0] - 1][primeindexes[1]] = True
                     except(IndexError):
                         pass
-                    #debug.writelines(str(thequeue.items))
+                    
                 current_label += 1
     dictionary = dict()
     for i in range(image_height):
@@ -214,13 +214,9 @@ def connections(pix_array, image_width, image_height):
         if dictionary[i] > highest:
             region = i
             highest = dictionary[i]
-    #file = open("connect.txt", "w")
-    #file.write(str(copyarray))
-    #file.close()
-    #debug.close()
-    print(dictionary)
-    #print(max(dictionary.values()))
-    print(region)
+   
+    #print(dictionary)
+    #print(region)
     tl = (image_width, image_height)
     br = (0, 0)
     for i in range(image_height):
@@ -234,7 +230,7 @@ def connections(pix_array, image_width, image_height):
                     br = (j, br[1])
                 if i > br[1]:
                     br = (br[0], i)
-    print(tl, br)
+    #print(tl, br)
     return (tl, br)
 
 # This is our code skeleton that performs the license plate detection.
@@ -247,7 +243,7 @@ def main():
     SHOW_DEBUG_FIGURES = True
 
     # this is the default input image filename
-    input_filename = "numberplate1.png"
+    input_filename = "numberplate6.png"
 
     if command_line_arguments != []:
         input_filename = command_line_arguments[0]
@@ -287,10 +283,10 @@ def main():
     standarddevarray = contrastStretch(standarddevarray, image_width, image_height)
     thresholdarray = binaryimage(standarddevarray, image_width, image_height)
     dilationarray = dilation(thresholdarray, image_width, image_height)
-    for i in range(3):
+    for i in range(4):
         dilationarray = dilation(dilationarray, image_width, image_height)
     erosionarray = erosion(dilationarray, image_width, image_height)
-    for i in range(2):
+    for i in range(4):
         erosionarray = erosion(erosionarray, image_width, image_height)
     tl, br = connections(erosionarray, image_width, image_height)
     axs1[0, 1].set_title('Standard Deviation')
