@@ -1,3 +1,4 @@
+from cProfile import label
 import math
 import sys
 from pathlib import Path
@@ -7,7 +8,21 @@ from matplotlib.patches import Rectangle
 
 # import our basic, light-weight png reader library
 import imageIO.png
+class Queue:
+    def __init__(self):
+        self.items = []
 
+    def isEmpty(self):
+        return self.items == []
+
+    def enqueue(self, item):
+        self.items.insert(0,item)
+
+    def dequeue(self):
+        return self.items.pop()
+
+    def size(self):
+        return len(self.items)
 # this function reads an RGB color png file and returns width, height, as well as pixel arrays for r,g,b
 def readRGBImageToSeparatePixelArrays(input_filename):
 
@@ -101,6 +116,127 @@ def binaryimage(pix_array, image_width, image_height):
             else:
                 copyarray[i][j] = 0
     return copyarray
+
+def erosion(pix_array, image_width, image_height):
+    copyarray = createInitializedGreyscalePixelArray(image_width, image_height)
+    for i in range(image_height):
+        for j in range(image_width):
+            try:    
+                count = 0
+                if pix_array[i][j] > 1:
+                    for k in range(i - 1, i + 2):
+                        for l in range(j - 1, j + 2):
+                            if pix_array[k][l] > 1:
+                                count += 1
+                    if count == 9:
+                        copyarray[i][j] = 255
+                    else:
+                        copyarray[i][j] = 0
+                else:
+                    copyarray[i][j] = 0
+            except(IndexError):
+                continue
+    return copyarray
+
+def dilation(pix_array, image_width, image_height):
+    copyarray = createInitializedGreyscalePixelArray(image_width, image_height)
+    for i in range(image_height):
+        for j in range(image_width):
+            try:
+                if pix_array[i][j] > 1:
+                    for k in range(i - 1, i + 2):
+                        for l in range(j - 1, j + 2):
+                            copyarray[k][l] = 255
+            except(IndexError):
+                continue
+    return copyarray
+
+def connections(pix_array, image_width, image_height):
+    #debug = open("debug.txt", "w")
+    current_label = 1
+    copyarray = createInitializedGreyscalePixelArray(image_width, image_height) #Empty array of 0s
+    visitedarray = createInitializedGreyscalePixelArray(image_width, image_height)
+    for i in range(image_height):
+        for j in range(image_width):
+            if pix_array[i][j] > 1 and visitedarray[i][j] != True:
+                thequeue = Queue()
+                thequeue.enqueue((i, j))
+                #debug.write(str(thequeue.size()))
+                while not thequeue.isEmpty():
+                    primeindexes = thequeue.dequeue()
+                    #debug.writelines(str(primeindexes))
+                    copyarray[primeindexes[0]][primeindexes[1]] = current_label
+                    try: #Left pixel
+                        if visitedarray[primeindexes[0]][primeindexes[1] - 1] != True and pix_array[primeindexes[0]][primeindexes[1] - 1] > 1:
+                            visitedarray[primeindexes[0]][primeindexes[1] - 1] = True
+                            thequeue.enqueue((primeindexes[0], primeindexes[1] - 1))
+                            
+                        else:
+                            visitedarray[primeindexes[0]][primeindexes[1] - 1] = True
+                    except(IndexError):
+                        pass
+                    try: #Right pixel
+                        if visitedarray[primeindexes[0]][primeindexes[1] + 1] != True and pix_array[primeindexes[0]][primeindexes[1] + 1] > 1:
+                            visitedarray[primeindexes[0]][primeindexes[1] + 1] = True
+                            thequeue.enqueue((primeindexes[0], primeindexes[1] + 1))
+                        else:
+                            visitedarray[primeindexes[0]][primeindexes[1] + 1] = True
+                    except(IndexError):
+                        pass
+                    try: #Upper pixel
+                        if visitedarray[primeindexes[0] + 1][primeindexes[1]] != True and pix_array[primeindexes[0] + 1][primeindexes[1]] > 1:
+                            visitedarray[primeindexes[0] + 1][primeindexes[1]] = True
+                            thequeue.enqueue((primeindexes[0] + 1, primeindexes[1]))
+                        else:
+                            visitedarray[primeindexes[0] + 1][primeindexes[1]] = True
+                    except(IndexError):
+                        pass
+                    try:
+                        if visitedarray[primeindexes[0] - 1][primeindexes[1]] != True and pix_array[primeindexes[0] - 1][primeindexes[1]] > 1:
+                            visitedarray[primeindexes[0] - 1][primeindexes[1]]
+                            thequeue.enqueue((primeindexes[0] - 1, primeindexes[1]))
+                        else:
+                            visitedarray[primeindexes[0] - 1][primeindexes[1]] = True
+                    except(IndexError):
+                        pass
+                    #debug.writelines(str(thequeue.items))
+                current_label += 1
+    dictionary = dict()
+    for i in range(image_height):
+        for j in range(image_width):
+            if copyarray[i][j] > 0 and copyarray[i][j] not in dictionary.keys():
+                dictionary[copyarray[i][j]] = 1
+            elif copyarray[i][j] > 0:
+                dictionary[copyarray[i][j]] += 1
+    region = 0
+    highest = 0
+    for i in dictionary:
+        if dictionary[i] > highest:
+            region = i
+            highest = dictionary[i]
+    #file = open("connect.txt", "w")
+    #file.write(str(copyarray))
+    #file.close()
+    #debug.close()
+    print(dictionary)
+    #print(max(dictionary.values()))
+    print(region)
+    tl = (image_width, image_height)
+    br = (0, 0)
+    for i in range(image_height):
+        for j in range(image_width):
+            if copyarray[i][j] == region:
+                if j < tl[0]:
+                    tl = (j, tl[1])
+                    if i < tl[1]:
+                        tl = (tl[0], i)
+                if j > br[0]:
+                    br = (j, br[1])
+                    if i > br[1]:
+                        br = (br[0], i)
+    print(tl, br)
+    return (tl, br)
+
 # This is our code skeleton that performs the license plate detection.
 # Feel free to try it on your own images of cars, but keep in mind that with our algorithm developed in this lecture,
 # we won't detect arbitrary or difficult to detect license plates!
@@ -146,14 +282,21 @@ def main():
     px_array = computeRGBToGreyscale(px_array_r, px_array_b, px_array_g, image_width, image_height)
     px_arraycopy = px_array[:]
     contrastarray = contrastStretch(px_arraycopy, image_width, image_height)
-    axs1[1, 0].set_title('Contrast stretch')
-    axs1[1, 0].imshow(contrastarray, cmap='gray')
+    
     standarddevarray = standardDev(contrastarray, image_width, image_height)
     standarddevarray = contrastStretch(standarddevarray, image_width, image_height)
     thresholdarray = binaryimage(standarddevarray, image_width, image_height)
+    dilationarray = dilation(thresholdarray, image_width, image_height)
+    for i in range(3):
+        dilationarray = dilation(dilationarray, image_width, image_height)
+    erosionarray = erosion(dilationarray, image_width, image_height)
+    for i in range(2):
+        erosionarray = erosion(erosionarray, image_width, image_height)
+    tl, br = connections(erosionarray, image_width, image_height)
     axs1[0, 1].set_title('Standard Deviation')
     axs1[0, 1].imshow(standarddevarray, cmap='gray')
-    
+    axs1[1, 0].set_title('Erosion')
+    axs1[1, 0].imshow(erosionarray, cmap='gray')
     axs1[0, 0].set_title('Thresholding')
     axs1[0, 0].imshow(thresholdarray, cmap='gray')
     # compute a dummy bounding box centered in the middle of the input image, and with as size of half of width and height
